@@ -7,12 +7,15 @@ const router= Router();
 router.post("/usuarios_estebanquito", methodUsers.createUser);
 router.get("/usuarios_estebanquito", methodUsers.getUsuarios);
 router.get("/usuario_interes/:correo", methodUsers.getUsuario);
-router.post("/deposito/:id", methodUsers.hacerDeposito);
-router.post("/retiro/:id", methodUsers.retirar);
+router.get("/usuario_transferencia/:numeroCuenta", methodUsers.getUsuarioTranferencia);
+router.post("/deposito/:numeroCuenta", methodUsers.hacerDeposito);
+router.post("/retiro/:numeroCuenta", methodUsers.retirar);
 router.patch("/cambiarContrasena/:id", methodUsers.actualizarContraseña);
 router.post("/transferir/:id", methodUsers.transferir);
 router.post("/prestamo/:id", methodUsers.prestamo);
 router.post("/abono/:id", methodUsers.abono);
+router.get("/ultimo_deposito/:numeroCuenta", methodUsers.getUltimoDeposito);
+router.get("/ultimo_retiro/:numeroCuenta", methodUsers.getUltimoRetiro);
 
 
 export default router;

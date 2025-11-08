@@ -11,7 +11,7 @@ const generarNumeroCuentaUnico= async()=>{
             numCuenta = Math.floor(Math.random() * 9000000000) + 1000000000;
             repetido = usuarios.some(u => u.numeroCuenta === numCuenta.toString());
         } while (repetido);
-
+        
         return numCuenta.toString();
 
 }
@@ -86,16 +86,16 @@ const UserExist= async(correo)=>{
 
 const hacerDeposito= async (req, res)=>{
     try{
-        const { id } = req.params;       
+        const { numeroCuenta } = req.params;       
         const { deposito } = req.body;
 
         const connection = await getConnection();
 
         const [result] = await connection.query(
-        "UPDATE usuario SET totalSaldo = totalSaldo+? WHERE numeroCuenta = ?", [deposito, id]);
+        "UPDATE usuario SET totalSaldo = totalSaldo+? WHERE numeroCuenta = ?", [deposito, numeroCuenta]);
 
         const data = {
-            numeroCuenta: id, 
+            numeroCuenta: numeroCuenta, 
             id_tipoMovimiento: 4,       
             monto: deposito,
             fecha: new Date()
@@ -113,21 +113,21 @@ const hacerDeposito= async (req, res)=>{
 
 const retirar= async (req, res)=>{
     try{
-        const { id } = req.params;       
+        const { numeroCuenta } = req.params;       
         const { retiro } = req.body;
 
         const connection = await getConnection();
 
-        const[saldoTotal]= await connection.query("Select totalSaldo from usuario where numeroCuenta= ?", id)
+        const[saldoTotal]= await connection.query("Select totalSaldo from usuario where numeroCuenta= ?", numeroCuenta)
 
         const saldoActual= saldoTotal[0].totalSaldo;
 
         if(saldoActual>retiro){
             const [result] = await connection.query(
-            "UPDATE usuario SET totalSaldo = totalSaldo-? WHERE numeroCuenta = ?", [retiro, id]);
+            "UPDATE usuario SET totalSaldo = totalSaldo-? WHERE numeroCuenta = ?", [retiro, numeroCuenta]);
 
             const data = {
-                numeroCuenta: id, 
+                numeroCuenta: numeroCuenta, 
                 id_tipoMovimiento: 3,       
                 monto: retiro,
                 fecha: new Date()
@@ -210,11 +210,25 @@ const getUsuario= async (req, res)=>{
     }
 }
 
+const getUsuarioTranferencia= async (req, res)=>{
+    try{
+    
+        const connection= await getConnection();
+        const {numeroCuenta}= req.params;
+        const result= await connection.query("Select nombre from usuario where numeroCuenta=?", [numeroCuenta])
+        res.json(result[0])
+    }
+    catch (error){
+        console.log(error);
+    }
+}
+
+
 const deleteUser= async (req, res)=>{
     try{
-        const {id}= req.params
+        const {numeroCuenta}= req.params
         const connection= await getConnection();
-        const result= await connection.query("delete from usuario where id= ?", [id]);
+        const result= await connection.query("delete from usuario where numeroCuenta= ?", [numeroCuenta]);
         res.json({message: "usuario eliminado"})
     }
     catch(err){
@@ -358,6 +372,45 @@ const abono = async(req, res)=>{
     }
 }
 
+const getUltimoDeposito = async (req, res) => {
+    try {
+        const { numeroCuenta } = req.params;
+        const connection = await getConnection();
+
+        const [result] = await connection.query(
+        `select monto, fecha from movimiento where numeroCuenta = ? AND id_tipoMovimiento = 4
+        order by fecha desc limit 1`,[numeroCuenta]);
+
+    if (result.length === 0) {
+        return res.json({ message: "No hay depósitos registrados" });
+    }
+
+    res.json(result[0]);
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+const getUltimoRetiro = async (req, res) => {
+    try {
+        const { numeroCuenta } = req.params;
+        const connection = await getConnection();
+
+        const [result] = await connection.query(
+        `select monto, fecha from movimiento where numeroCuenta = ? AND id_tipoMovimiento = 3
+        order by fecha desc limit 1`,[numeroCuenta]);
+
+        if (result.length === 0) {
+        return res.json({ message: "No hay retiros registrados" });
+        }
+
+        res.json(result[0]);
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+
 export const methodUsers= {
     createUser,
     getUsuarios,
@@ -368,5 +421,8 @@ export const methodUsers= {
     actualizarContraseña,
     transferir,
     prestamo,
-    abono
+    abono,
+    getUsuarioTranferencia,
+    getUltimoDeposito,
+    getUltimoRetiro
 }
