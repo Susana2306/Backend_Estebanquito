@@ -181,7 +181,7 @@ const getUsuario= async (req, res)=>{
 
 
         if(total_abonos===0){
-            const [totalDeuda]= await connection.query(`select p.valorPrestamo 
+            const [totalDeuda]= await connection.query(`select sum(p.valorPrestamo) as valorPrestamo
                 from prestamo as p inner join usuario as u ON p.numeroCuenta= u.numeroCuenta 
                 where u.correo=?`, [correo]);
 
@@ -190,12 +190,23 @@ const getUsuario= async (req, res)=>{
             } 
         }
         else{
-            const [totalPendiente]= await connection.query(`SELECT SUM(a.valorPendiente) AS total_pendiente
-            FROM abono AS a
-            INNER JOIN prestamo AS p ON a.id_prestamo = p.id_prestamo
-            INNER JOIN usuario AS u ON p.numeroCuenta = u.numeroCuenta
-            WHERE u.correo = ?
-            `, [correo])
+            const [totalPendiente]= await connection.query(` SELECT 
+        SUM(
+            COALESCE(ultimo_abono.valorPendiente, p.valorPrestamo)
+        ) AS total_pendiente
+    FROM prestamo AS p
+    INNER JOIN usuario AS u ON p.numeroCuenta = u.numeroCuenta
+    LEFT JOIN (
+        SELECT a1.id_prestamo, a1.valorPendiente
+        FROM abono AS a1
+        INNER JOIN (
+            SELECT id_prestamo, MAX(id_abono) AS ultimo
+            FROM abono
+            GROUP BY id_prestamo
+        ) AS ultimos ON a1.id_abono = ultimos.ultimo
+    ) AS ultimo_abono ON p.id_prestamo = ultimo_abono.id_prestamo
+    WHERE u.correo = ?
+`, [correo])
 
             deuda = totalPendiente?.[0]?.total_pendiente ?? 0;
 
@@ -350,10 +361,31 @@ const abono = async(req, res)=>{
 
         const [cons_Prestamo]= await connection.query("Select id_prestamo, valorPrestamo from prestamo where numeroCuenta=? AND concepto=?", [id, concepto]);
         const idPrestamo= cons_Prestamo[0].id_prestamo;
-        const valorPrestamo= cons_Prestamo[0].valorPrestamo;
+        let valorPrestamo= cons_Prestamo[0].valorPrestamo;
         
+        const [haSaldado] = await connection.query(`
+            SELECT COUNT(a.id_abono) AS total_abonos
+            FROM abono AS a
+            INNER JOIN prestamo AS p ON a.id_prestamo = p.id_prestamo
+            INNER JOIN usuario AS u ON p.numeroCuenta = u.numeroCuenta
+            WHERE u.numeroCuenta = ?
+            `, [id]);
+        
+        const total_abonos = haSaldado?.[0]?.total_abonos ?? 0;
 
-        const valorPendiente= valorPrestamo-valorAbonado;
+        let valorPendiente;
+
+        if(total_abonos===0){
+            valorPendiente= valorPrestamo-valorAbonado;
+        }
+        else{
+            const [ultimoAbono] = await connection.query(
+                "SELECT valorPendiente FROM abono WHERE id_prestamo = ? ORDER BY id_abono DESC LIMIT 1",
+                [idPrestamo]
+            );
+            valorPendiente = ultimoAbono[0].valorPendiente - valorAbonado;
+        }
+        
 
         const data={
             valorAbonado: valorAbonado,
@@ -365,6 +397,9 @@ const abono = async(req, res)=>{
         const nuevoAbono= await connection.query("insert into abono set?", [data])
 
         res.json({message:"Abono realizado con exito :)"})
+
+        const [result] = await connection.query(
+        "UPDATE usuario SET totalSaldo= totalSaldo-? WHERE numeroCuenta = ?", [valorAbonado, id]);
 
     }
     catch (error){
@@ -408,6 +443,26 @@ const getUltimoRetiro = async (req, res) => {
     } catch (error) {
         console.log(error);
     }
+
+};
+
+const getPrestamo = async (req, res) => {
+    try {
+        const { numeroCuenta } = req.params;
+        const connection = await getConnection();
+
+        const [result] = await connection.query(
+        `select concepto from prestamo where numeroCuenta = ?`,[numeroCuenta]);
+
+        if (result.length === 0) {
+        return res.json({ message: "No hay prestamos registrados" });
+        }
+
+        res.json(result);
+    } catch (error) {
+        console.log(error);
+    }
+
 };
 
 
@@ -424,5 +479,6 @@ export const methodUsers= {
     abono,
     getUsuarioTranferencia,
     getUltimoDeposito,
-    getUltimoRetiro
+    getUltimoRetiro,
+    getPrestamo
 }
