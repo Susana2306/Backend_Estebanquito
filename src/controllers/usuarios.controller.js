@@ -485,6 +485,28 @@ const getUltimoAbono = async (req, res) => {
     }
 };
 
+const historialMovimientos=async(req, res)=>{
+    try {
+        const { numeroCuenta } = req.params;
+        const connection = await getConnection();
+
+        const[response]= await connection.query(`Select m.cuentaDestino, m.monto,
+            m.concepto, m.fecha, t.tipoMovimiento 
+            from movimiento as m inner join tipomovimiento as t 
+            on m.id_tipoMovimiento= t.id_tipoMovimiento
+            where numeroCuenta=? ORDER BY fecha DESC`, [numeroCuenta])
+
+        if (response.length === 0) {
+            return res.json({ message: "No hay movimientos registrados" });
+        }
+
+        res.json(response);
+        
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 
 export const methodUsers= {
     createUser,
@@ -501,5 +523,6 @@ export const methodUsers= {
     getUltimoDeposito,
     getUltimoRetiro,
     getPrestamo,
-    getUltimoAbono
+    getUltimoAbono,
+    historialMovimientos
 }
