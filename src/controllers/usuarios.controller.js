@@ -465,6 +465,26 @@ const getPrestamo = async (req, res) => {
 
 };
 
+const getUltimoAbono = async (req, res) => {
+    try {
+        const { numeroCuenta } = req.params;
+        const connection = await getConnection();
+
+        const [result] = await connection.query(
+            `select a.valorAbonado as monto, a.fechaAbono as fecha from abono as a inner join prestamo as p on a.id_prestamo = p.id_prestamo
+            where p.numeroCuenta = ? order by a.fechaAbono desc, a.id_abono desc LIMIT 1
+        `, [numeroCuenta]);
+
+        if (result.length === 0) {
+            return res.json({ message: "No hay abonos registrados" });
+        }
+
+        res.json(result[0]);
+    } catch (error) {
+        console.log(error);
+    }
+};
+
 
 export const methodUsers= {
     createUser,
@@ -480,5 +500,6 @@ export const methodUsers= {
     getUsuarioTranferencia,
     getUltimoDeposito,
     getUltimoRetiro,
-    getPrestamo
+    getPrestamo,
+    getUltimoAbono
 }

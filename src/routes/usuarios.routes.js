@@ -17,6 +17,7 @@ router.post("/abono/:id", methodUsers.abono);
 router.get("/ultimo_deposito/:numeroCuenta", methodUsers.getUltimoDeposito);
 router.get("/ultimo_retiro/:numeroCuenta", methodUsers.getUltimoRetiro);
 router.get("/concepto/:numeroCuenta", methodUsers.getPrestamo);
+router.get("/ultimo_abono/:numeroCuenta", methodUsers.getUltimoAbono);
 
 
 export default router;
