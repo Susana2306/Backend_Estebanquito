@@ -255,7 +255,7 @@ const actualizarContraseña = async (req, res)=>{
         const connection = await getConnection();
 
         const [result] = await connection.query(
-        "UPDATE usuario SET contrasena = ? WHERE numeroCuenta = ?", [nuevaContraseña, id]);
+        "UPDATE usuario SET contrasena = ? WHERE correo = ?", [nuevaContraseña, id]);
     
         res.json({message: "Cambio realizado exitosamente"});
 
