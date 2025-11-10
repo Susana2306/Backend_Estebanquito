@@ -534,6 +534,29 @@ const getAbono = async (req, res) => {
 };
 
 
+const recuperarContraseña = async (req, res) => {
+    try {
+        const { numeroCuenta } = req.params;
+        const { cedula, nuevaContraseña } = req.body;
+        const connection = await getConnection();
+
+        const [result] = await connection.query(
+            "UPDATE usuario SET contrasena = ? WHERE numeroIdentificacion = ? AND numeroCuenta = ?",
+            [nuevaContraseña, cedula, numeroCuenta]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(400).json({ message: "Número de identificación o número de cuenta incorrectos" });
+        }
+
+        res.json({ message: "Cambio realizado exitosamente" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error en el servidor" });
+    }
+};
+
+
 
 export const methodUsers= {
     createUser,
@@ -552,5 +575,6 @@ export const methodUsers= {
     getPrestamo,
     getUltimoAbono,
     historialMovimientos,
-    getAbono
+    getAbono,
+    recuperarContraseña
 }
