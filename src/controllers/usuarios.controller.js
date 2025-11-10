@@ -534,6 +534,26 @@ const getAbono = async (req, res) => {
 };
 
 
+const recuperarContraseña = async (req, res) => {
+    try {
+
+        const{ cedula }= req.params;
+        const { numeroCuenta } = req.params;
+        
+        const connection = await getConnection();
+
+        const [result] = await connection.query(
+            "select * from usuario WHERE numeroIdentificacion = ? AND numeroCuenta = ?",
+            [cedula, numeroCuenta]
+        );
+        res.json(result);
+        console.log(result)
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+
 
 export const methodUsers= {
     createUser,
@@ -552,5 +572,6 @@ export const methodUsers= {
     getPrestamo,
     getUltimoAbono,
     historialMovimientos,
-    getAbono
+    getAbono,
+    recuperarContraseña
 }
