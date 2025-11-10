@@ -19,6 +19,7 @@ router.get("/ultimo_retiro/:numeroCuenta", methodUsers.getUltimoRetiro);
 router.get("/concepto/:numeroCuenta", methodUsers.getPrestamo);
 router.get("/ultimo_abono/:numeroCuenta", methodUsers.getUltimoAbono);
 router.get("/movimientos/:numeroCuenta", methodUsers.historialMovimientos);
+router.get("/abono/:numeroCuenta", methodUsers.getAbono);
 
 
 export default router;

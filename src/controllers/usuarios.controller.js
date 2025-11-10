@@ -508,6 +508,33 @@ const historialMovimientos=async(req, res)=>{
 }
 
 
+const getAbono = async (req, res) => {
+    try {
+        const { numeroCuenta } = req.params;
+
+        const connection = await getConnection();
+
+        const [result] = await connection.query(
+        `SELECT 
+            a.id_abono AS id_abono,
+            a.valorAbonado AS valorAbonado,
+            a.valorPendiente AS valorPendiente,
+            a.fechaAbono AS fechaAbono,
+            a.id_prestamo AS id_prestamo
+        FROM abono a
+        INNER JOIN prestamo p ON a.id_prestamo = p.id_prestamo
+        WHERE p.numeroCuenta = ?`,
+        [numeroCuenta]
+        );
+
+        res.json(result);
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+
+
 export const methodUsers= {
     createUser,
     getUsuarios,
@@ -524,5 +551,6 @@ export const methodUsers= {
     getUltimoRetiro,
     getPrestamo,
     getUltimoAbono,
-    historialMovimientos
+    historialMovimientos,
+    getAbono
 }
